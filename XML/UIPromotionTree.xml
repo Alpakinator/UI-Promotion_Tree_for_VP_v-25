@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+	<Language_en_US>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_RECON"><Text>Recon</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_MELEE"><Text>Melee</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_GUNPOWDER"><Text>Melee — Gunpowder</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_ANTI_AIR"><Text>Melee — Anti-air</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_RANGED"><Text>Ranged</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_MOUNTED_RANGED"><Text>Ranged — Mounted</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_HELICOPTER"><Text>Ranged — Helicopter</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_MOUNTED_MELEE"><Text>Mounted melee</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_ARMOR"><Text>Armor</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_SIEGE"><Text>Siege</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_NAVAL_MELEE"><Text>Naval melee</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_NAVAL_MODERN"><Text>Naval melee — Modern</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_NAVAL_RANGED"><Text>Naval ranged</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_CARRIER"><Text>Carrier</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_SUBMARINE"><Text>Submarine</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_FIGHTER"><Text>Fighter</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_BOMBER"><Text>Bomber</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_MISSIONARY"><Text>Missionary</Text></Row>
+    <Row Tag="TXT_KEY_PROMOTREE_CLASS_DIPLOMACY"><Text>Diplomacy</Text></Row>
+
+    <Row Tag="TXT_KEY_PROMO_REQUIRED_PROMOTION"><Text>Required promotion: {1_Name}</Text></Row>		
+		<Row Tag="TXT_KEY_PROMO_SWITCH_MODE" >
+			<Text>Switch Mode</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK" >
+			<Text>Promotion Tree</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK_TT" >
+			<Text>Display the Promotion Tree to easily see which promotions are available for a combat class (recon, naval, melee, siege, etc)</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_OPEN_TREE_FOR_UNIT_TT" >
+			<Text>Display the Promotion Tree to easily see which promotions this unit has and are available</Text>
+		</Row>
+		
+		<Row Tag="TXT_KEY_PROMO_SIZE" >
+			<Text>Small (key: 'D')</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_EARNT" >
+			<Text>Earnt</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_EARNT_TT" >
+			<Text>Promotions already earnt by the unit (excludes those from special abilities and wonders)</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_AVAILABLE" >
+			<Text>Available</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_AVAILABLE_TT" >
+			<Text>Promotions which may be chosen for the unit</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE" >
+			<Text>Not Yet Available</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE_TT" >
+			<Text>Promotions which are not yet available to the unit</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_UNIT" >
+			<Text>Unit</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_CLASS" >
+			<Text>Combat Class</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_BASE" >
+			<Text>Promotion Tree</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_BASE_TT" >
+			<Text>Use the button at the top left or the shortcut key 'S' to switch between modes.</Text>
+		</Row>
+	</Language_en_US>
+
+    <Language_de_DE>
+		<Row Tag="TXT_KEY_PROMO_SWITCH_MODE" >
+			<Text>Modus wechseln</Text>
+		</Row>
+        <Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK" >
+            <Text>Beförderungsbaum</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK_TT" >
+            <Text>Zeigt auf einfache Weise welche Beförderungen zu welchem Kampftyp gehören</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_OPEN_TREE_FOR_UNIT_TT" >
+            <Text>Zeigt auf einfache Weise welche Beförderungen diese Einheit zur Verfügung hat</Text>
+        </Row>
+        
+        <Row Tag="TXT_KEY_PROMO_SIZE" >
+            <Text>Klein (Taste: 'D')</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_EARNT" >
+            <Text>Erhalten</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_EARNT_TT" >
+            <Text>Schon erhaltene Beförderungen der Einheit (ausgenommen Spezialfähigkeiten and Wunder-Beförderungen)</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_AVAILABLE" >
+            <Text>Verfügbar</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_AVAILABLE_TT" >
+            <Text>Noch verfügbar werdende Beförderungen</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE" >
+            <Text>Noch nicht verfügbar</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE_TT" >
+            <Text>Beförderungen, welche derzeit noch nicht verfügbar sind</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_GROUP_UNIT" >
+            <Text>Einheit</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_GROUP_CLASS" >
+            <Text>Kampftyp</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_GROUP_BASE" >
+            <Text>Beförderungsbaum</Text>
+        </Row>
+        <Row Tag="TXT_KEY_PROMO_GROUP_BASE_TT" >
+            <Text>Nutze den Schalter links oben oder die Taste 'S' um zwischen den Darstellungsmodi zu wechseln.</Text>
+        </Row>
+    </Language_de_DE>
+
+	<Language_RU_RU>  <!-- TODO: needs some proofreading -->
+		<Row Tag="TXT_KEY_PROMO_SWITCH_MODE" >
+			<Text>Переключать модус</Text>
+		</Row>        
+		<Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK" >
+			<Text>Дерево повышений</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_DIPLO_CORNER_HOOK_TT" >
+			<Text>При просмотре дерева повышений легко увидеть какие повышения доступны для боевых классов юнитов (разведчиков, военно-морских юнитов, войск ближнего боя, осадных юнитов и т.д.).</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_OPEN_TREE_FOR_UNIT_TT" >
+			<Text>При просмотре дерева повышений легко увидеть какие повышения доступны для боевых классов юнитов</Text>
+		</Row>
+		
+		<Row Tag="TXT_KEY_PROMO_SIZE" >
+			<Text>Мелко (клавиша: «D»)</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_EARNT" >
+			<Text>Полученные</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_EARNT_TT" >
+			<Text>Повышения, уже полученные юнитом (за исключением специальных возможностей и от чудес)</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_AVAILABLE" >
+			<Text>Доступные</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_AVAILABLE_TT" >
+			<Text>Повышения, которые могут быть выбраны для юнита</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE" >
+			<Text>Пока не доступны</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_NOT_AVAILABLE_TT" >
+			<Text>Повышения, которые пока не доступны юниту</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_UNIT" >
+			<Text>Юнит</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_CLASS" >
+			<Text>Боевой класс</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_BASE" >
+			<Text>Дерево повышений</Text>
+		</Row>
+		<Row Tag="TXT_KEY_PROMO_GROUP_BASE_TT" >
+			<Text>Используйте кнопку слева вверху или клавишу «S» для переключения между режимами отображения.</Text>
+		</Row>
+	</Language_RU_RU>
+</GameData>

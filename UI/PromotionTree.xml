@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Context ColorSet="Beige_Black_Alpha" Name="PromotionTree">
+	<Instance Name="PipeInstance" >
+		<Box Anchor="L,T" Color="0,0,0,0" Size="32,42" ID="PipeIcon">
+			<Image Anchor="L,T" Color="White,255" Texture="TechBranches.dds" Size="32,42" ID="PipeArt" />
+		</Box>
+	</Instance>
+    <Instance Name="UnitStatsSection">
+        <Box Anchor="L,T" Size="224,60" Color="0,0,0,0" ID="Root">
+            <Button Anchor="L,T" Size="224,26" Color="0,0,0,0" ID="Heading">
+                <Label Anchor="C,C" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="SoftShadow" ConsumeMouse="0" ID="HeadingText"/>
+            </Button>
+            <Label Anchor="L,T" Offset="0,28" WrapWidth="224" LeadingOffset="-4" Font="TwCenMT16"
+                ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ConsumeMouse="0" ID="Body"/>
+        </Box>
+    </Instance>
+
+	<Instance Name="ExtraPromotionInstance">
+		<Button Anchor="L,T" Size="198,48" Color="0,0,0,0" ID="Button">
+			<Grid Anchor="L,C" Offset="20,0" Size="178,44" Style="GridBlack8">
+				<Label Anchor="L,C" Offset="31,0" Size="143,40" Font="TwCenMT18"
+					ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="Name" />
+				<Grid Anchor="C,C" Size="182,46" Style="Grid9Frame" />
+			</Grid>
+			<Image Anchor="L,C" Size="45,45" Texture="45x45BaseFrame.dds" ID="PortraitFrame">
+				<Image Anchor="C,C" Size="45,45" ID="Portrait" />
+			</Image>
+		</Button>
+	</Instance>
+
+	<Instance Name="ButtonInstance" >
+		<Box Anchor="L,T" Size="190,60" Color="0,0,0,0" ID="ButtonBox">
+			<Button Anchor="L,T" Size="190,60" Color="0,0,0,0" StateOffsetIncrement="0,0" ID="Button" >
+				<Grid Anchor="L,T" Size="190,60" Color="255,255,255,255" Style="Grid9Gold8" ID="Earnt" Hidden="1">
+					<ScrollAnim ID="EarnedShine" Offset="0,0"  Size="190,60" Speed="0.07" Texture="TechGoldShine.dds" MaskTexture="assets\UI\Art\Notification\BubblesMask375x90.dds" />
+					<AlphaAnim Anchor="L,T" Size="190,60" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="EarntPulse">
+						<Grid Anchor="L,T" Size="190,60" Color="140,190,255,255" Style="Grid9Highlight8" ID="EarntPulseFill"/>
+					</AlphaAnim>
+
+					<Label Anchor="L,C"  Offset="64,0" Font="TwCenMT18" Color0="Black" Color1="Beige,200" FontStyle="Shadow" ID="EarntName"/>
+					<Label Anchor="L,C"  Offset="64,0" Font="TwCenMT18" Color0="Black" Color1="Beige,200" FontStyle="SoftShadow" Hidden="1" ID="EarntGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="194,64" Padding="0,0" Style="Grid9FrameGold" ID="EarnedFrame"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="194,64" Padding="0,0" Style="Grid9Frame" Hidden="1" ID="EarnedHoverFrame"/>
+				</Grid>
+
+				<Grid Anchor="L,T" Size="190,60" Color="255,255,255,255" Style="Grid9Green8" ID="Available" Hidden="1">
+					<AlphaAnim Anchor="L,T" Size="190,60" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="AvailablePulse">
+						<Grid Anchor="L,T" Size="190,60" Color="140,190,255,255" Style="Grid9Highlight8" ID="AvailablePulseFill"/>
+					</AlphaAnim>
+					<Label Anchor="L,C" Offset="64,0" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="AvailableName"/>
+					<Label Anchor="L,C" Offset="64,0" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="SoftShadow" Hidden="1" ID="AvailableGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="194,64" Padding="0,0" Style="Grid9Frame" ID="AvailableFrame" />
+				</Grid>
+
+				<Grid Anchor="L,T" Size="190,60" Color="255,255,255,255" Style="GridBlack8" ID="Unavailable" Hidden="0">
+					<AlphaAnim Anchor="L,T" Size="190,60" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="UnavailablePulse">
+						<Grid Anchor="L,T" Size="190,60" Color="140,190,255,255" Style="Grid9Highlight8" ID="UnavailablePulseFill"/>
+					</AlphaAnim>
+					<Label Anchor="L,C" Offset="64,0" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="UnavailableName"/>
+					<Label Anchor="L,C" Offset="64,0" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="SoftShadow" Hidden="1" ID="UnavailableGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="194,64" Padding="0,0" Style="Grid9Frame" ID="UnavailableFrame" />
+				</Grid>
+
+				<Image Anchor="L,C" Offset="0,0" Size="64,64" Texture="64x64FrameButtons.dds" ID="PortraitFrame" />
+				<Image Anchor="L,C" Offset="0,0" Size="64,64" ID="Portrait"/>
+
+				<Label Anchor="R,B" AnchorSide="i,i" Offset="2,14" Size="24,24" String="[ICON_RESEARCH]" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="ReqTech" />
+			</Button>
+		</Box>
+	</Instance>
+
+	<Instance Name="ButtonInstanceSmall" >
+		<Box Anchor="L,T" Size="160,46" Color="0,0,0,0" ID="ButtonBox">
+			<Button Anchor="L,T" Size="160,46" Color="0,0,0,0" StateOffsetIncrement="0,0" ID="Button" >
+				<Grid Anchor="L,T" Size="160,46" Color="255,255,255,255" Style="Grid9Gold8" ID="Earnt" Hidden="1">
+					<ScrollAnim ID="EarnedShine" Offset="0,0"  Size="160,46" Speed="0.07" Texture="TechGoldShine.dds" MaskTexture="assets\UI\Art\Notification\BubblesMask375x90.dds" />
+					<AlphaAnim Anchor="L,T" Size="160,46" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="EarntPulse">
+						<Grid Anchor="L,T" Size="160,46" Color="140,190,255,255" Style="Grid9Highlight8" ID="EarntPulseFill"/>
+					</AlphaAnim>
+
+					<Label Anchor="L,C"  Offset="48,0" Font="TwCenMT16" Color0="Black" Color1="Beige,200" FontStyle="Shadow" ID="EarntName"/>
+					<Label Anchor="L,C"  Offset="48,0" Font="TwCenMT16" Color0="Black" Color1="Beige,200" FontStyle="SoftShadow" Hidden="1" ID="EarntGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="164,46" Padding="0,0" Style="Grid9FrameGold" ID="EarnedFrame"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="164,46" Padding="0,0" Style="Grid9Frame" Hidden="1" ID="EarnedHoverFrame"/>
+				</Grid>
+
+				<Grid Anchor="L,T" Size="160,46" Color="255,255,255,255" Style="Grid9Green8" ID="Available" Hidden="1">
+					<AlphaAnim Anchor="L,T" Size="160,46" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="AvailablePulse">
+						<Grid Anchor="L,T" Size="160,46" Color="140,190,255,255" Style="Grid9Highlight8" ID="AvailablePulseFill"/>
+					</AlphaAnim>
+					<Label Anchor="L,C" Offset="48,0" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="AvailableName"/>
+					<Label Anchor="L,C" Offset="48,0" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="SoftShadow" Hidden="1" ID="AvailableGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="164,46" Padding="0,0" Style="Grid9Frame" ID="AvailableFrame" />
+				</Grid>
+
+				<Grid Anchor="L,T" Size="160,46" Color="255,255,255,255" Style="GridBlack8" ID="Unavailable" Hidden="0">
+					<AlphaAnim Anchor="L,T" Size="160,46" Cycle="Bounce" Speed="0.7" AlphaStart=".14" AlphaEnd=".55" Hidden="1" ID="UnavailablePulse">
+						<Grid Anchor="L,T" Size="160,46" Color="140,190,255,255" Style="Grid9Highlight8" ID="UnavailablePulseFill"/>
+					</AlphaAnim>
+					<Label Anchor="L,C" Offset="48,0" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="UnavailableName"/>
+					<Label Anchor="L,C" Offset="48,0" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="SoftShadow" Hidden="1" ID="UnavailableGlowName"/>
+					<Grid Anchor="C,C" Offset="0,0" Size="164,46" Padding="0,0" Style="Grid9Frame" ID="UnavailableFrame" />
+				</Grid>
+
+				<Image Anchor="L,C" Offset="0,0" Size="45,45" Texture="45x45BaseFrame.dds" ID="PortraitFrame" />
+				<Image Anchor="L,C" Offset="0,0" Size="45,45" ID="Portrait"/>
+
+				<Label Anchor="R,B" AnchorSide="i,i" Offset="2,8" Size="24,24" String="[ICON_RESEARCH]" Font="TwCenMT16" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="ReqTech" />
+			</Button>
+		</Box>
+	</Instance>
+
+
+	<!-- Fade out the full screen area -->
+	<Box Anchor="C,C" Size="Full,Full" Color="0,0,0,220" ConsumeMouse="1"/>
+	
+	<Box Anchor="C,C" Size="Full,768" Color="0,0,0,0" ID="TreePanel">
+		<Box Anchor="C,T" AnchorSide="O,O" Size="Full,Full" Color="0,0,0,255" /> <!-- Top letter-box border -->
+		<Box Anchor="C,B" AnchorSide="O,I" Size="Full,10"   Color="0,0,0,255" /> <!-- Scroll bar area -->
+		<Box Anchor="C,B" AnchorSide="O,O" Size="Full,Full" Color="0,0,0,255" /> <!-- Bottom letter-box border -->
+
+		<ScrollPanel Anchor="L,T" Size="Full,760" Vertical="0" ID="ScrollPanel">
+			<Label ID="LayoutStatus" Anchor="C,C" Font="TwCenMT20" ColorSet="Beige_Black_Alpha" Hidden="1"/>
+			<!--Stack of Group boxes-->
+			<Stack Anchor="L,T" Offset="20,0" StackGrowth="Right" Padding="0" ID="GroupsStack" >
+				<Box Anchor="L,T" Size="246,768" Color="0,0,0,0" ID="ClassGroup">
+					<Image Anchor="R,T" Offset="-1,20" Color="White,32" Texture="Assets/UI/Art/Controls/9 Grids/Divider4.dds" Size="4,760" ID="ClassDivider"/>
+
+					<!-- Black Style-->
+					<Grid Anchor="L,T" AnchorSide="I,I" Offset="0,0" Style="WindowGridBlack" Size="246,24" ID="ClassBar">
+						<Label Anchor="C,C" AnchorSide="I,O" Offset="0,0" Font="TwCenMT22" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" String="TXT_KEY_PROMO_GROUP_CLASS" ID="ClassLabel"/>
+					</Grid>
+				</Box>
+
+				<Box Anchor="L,T" Size="286,768" Color="0,0,0,0" ID="BaseGroup">
+					<Image Anchor="R,T" Offset="-1,20" Color="White,32" Texture="Assets/UI/Art/Controls/9 Grids/Divider4.dds" Size="4,760" ID="BaseDivider"/>
+
+					<!-- Native Military Overview interior: Grid9DetailFive140's
+					     center texel is RGBA (4,8,11,235). -->
+					<Box Anchor="L,T" Offset="0,0" Color="0,0,0,204" Size="286,760" ID="BaseBlock">
+						<Grid Anchor="L,T" AnchorSide="I,I" Offset="0,0" Style="WindowGrid" Size="286,24" ID="BaseBar" ToolTip="TXT_KEY_PROMO_GROUP_BASE_TT" >
+							<Label Anchor="C,C" AnchorSide="I,O" Offset="0,0" Font="TwCenMT22" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" String="TXT_KEY_PROMO_GROUP_BASE" ID="BaseLabel"/>
+						</Grid>
+					</Box>
+				</Box>
+			</Stack>
+			
+			<!-- DropDown Box -->
+			<Box Anchor="L,T" Size="246,64" Offset="20,508" Color="0,0,0,0" ID="DropDownBox" >
+                <Label Anchor="C,T" Offset="0,67" Size="238,44" Font="TwCenMT16"
+                    ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ConsumeMouse="0" ID="ClassUnitRange" />
+				<Box Anchor="L,T" Offset="30,5" Size="216,54" Color="0,0,0,0">
+					<Grid Anchor="L,T" Offset="0,2" Size="216,49" Color="255,255,255,200" StateOffsetIncrement="0,0" Style="Grid9DarkBlue8Button" />
+					<Grid Anchor="C,C" Offset="0,0" Size="220,54" Padding="0,0" Style="Grid9Frame" />
+					<AlphaAnim  Anchor="L,T" Offset="0,2" Size="216,49" TextureOffset="0,0"  Pause="0" Cycle="Bounce" Speed="1" AlphaStart=".25" AlphaEnd=".75" >
+						<Grid  Size="216,49" Anchor="C,C" Offset="0,0" Style="Grid9Science8" />
+					</AlphaAnim>
+					
+					<!-- Civ V paints the closed ButtonData over its later siblings. Keep it
+					     transparent so the existing dark-blue bar and circular flag retain
+					     their natural draw order. Its hit area begins at x=22,
+					     behind the native 64px circular frame. -->
+					<PullDown ScrollThreshold="288" Anchor="L,C" Offset="-8,0" Size="224,54" AutoSizePopUp="0" SpaceForScroll="1" ID="ClassDropDown">
+						<ButtonData>
+							<Button Anchor="L,C" Size="224,54" Color="0,0,0,0" ConsumeMouse="1"/>
+						</ButtonData>
+						<!-- Account for native texture padding so the painted borders meet. -->
+						<GridData Anchor="C,B" Offset="0,-2" AnchorSide="I,O" Style="Grid9Frame27SquareBlack" Padding="5,5"/>
+						<ScrollPanelData Anchor="C,C" Vertical="1" Size="18,18" AutoScrollBar="1">
+							<ScrollBar Style="VertSlider" Anchor="R,C" AnchorSide="O,I"/>
+							<UpButton Style="ScrollBarUp" Anchor="R,T" AnchorSide="O,I"/>
+							<DownButton Style="ScrollBarDown" Anchor="R,B" AnchorSide="O,I"/>
+						</ScrollPanelData>
+						<StackData StackGrowth="Bottom" Padding="0" Anchor="C,T"/>
+						<InstanceData Name="InstanceOne">
+							<GridButton Size="196,40" Style="ZoomButton" Anchor="C,C" ID="Button">
+                                <Image Anchor="L,C" Offset="4,0" Size="32,32" ConsumeMouse="0" ID="Flag"/>
+                                <Label Anchor="L,C" Offset="42,0" Font="TwCenMT18" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ConsumeMouse="0" ID="Name"/>
+                            </GridButton>
+						</InstanceData>
+					</PullDown>
+					<Label Anchor="R,C" Offset="34,0" Size="150,44" Font="TwCenMT20" LeadingOffset="-6"
+						ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ConsumeMouse="0" ID="ClassSelectedName" />
+					<!-- Native Civ V down-arrow art; its painted shape stays the same
+					     during hover and does not consume the PullDown's click. -->
+					<Image Anchor="R,C" Offset="2,4" Size="32,32" Texture="SelectedDown32.dds" TextureOffset="0,0" ConsumeMouse="0" ID="ClassDropDownArrow" />
+				</Box>
+
+				<Image Anchor="L,C" Offset="0,0" Size="64,64" Texture="IconFrame64.dds" ID="ClassPortraitFrame">
+						<Image Anchor="C,C" Offset="0,0" Size="32,32" ID="ClassPortrait"/>
+				</Image>
+			</Box>
+
+			<!-- Unit Box -->
+			<Box Anchor="L,T" Size="246,128" Offset="20,476" Color="0,0,0,0" ID="UnitBox" >
+				<Grid Anchor="L,T" Offset="62,18" Size="184,92" Color="255,255,255,200" StateOffsetIncrement="0,0" Style="Grid9DarkBlue8Button" >
+					<!-- Keep the original absolute gold frame while the native blue
+					     8px-corner fill sits 2px inside its top and 3px inside its bottom. -->
+					<Grid Anchor="L,T" Offset="-2,-2" Size="188,97" Padding="0,0" Style="Grid9Frame" />
+					<AlphaAnim  Anchor="C,C" Offset="0,0" Size="184,92" TextureOffset="0,0"  Pause="0" Cycle="Bounce" Speed="1" AlphaStart=".25" AlphaEnd=".75" >
+						<Grid  Size="184,92" Anchor="C,C" Offset="0,0" Style="Grid9Science8" />
+					</AlphaAnim>
+
+					<Label Anchor="L,C" Offset="70,0" Size="112,104" Font="TwCenMT24" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" ID="UnitName"/>
+				</Grid>
+
+				<Image Anchor="L,C" Offset="0,0" Size="128,128" Texture="CitizenFrame128.dds" ID="UnitPortraitFrame">
+					<Image Anchor="C,C" Size="128,128" ID="UnitPortrait"/>
+				</Image>
+			</Box>
+
+			<!-- XP readout is shared by unit and class mode; Lua positions and shows it. -->
+			<Box Anchor="L,T" Offset="20,300" Size="112,28" Color="0,0,0,0" ConsumeMouse="0" ID="PromotionExperienceBox">
+				<Label Anchor="L,B" Offset="0,0" Font="TwCenMT20"
+					ColorSet="Beige_Black_Alpha" FontStyle="Shadow" Hidden="1" ID="PromotionExperienceLabel" />
+			</Box>
+			<GridButton Anchor="L,T" Offset="130,100" Size="88,34" String="Reset" Font="TwCenMT20"
+				Style="BaseButton" ConsumeMouse="1" Hidden="1" ID="ResetClassPlanButton" />
+            
+			<GridButton Anchor="L,T" Offset="20,30" Size="150,34" String="TXT_KEY_PROMO_SWITCH_MODE" Font="TwCenMT20" Style="BaseButton" ConsumeMouse="1" ID="SwitchModeButton" />
+			<CheckBox   Anchor="L,T" Offset="12,65" TextAnchorSide="Right" TextOffset="40,0" String="TXT_KEY_PROMO_SIZE" Font="TwCenMT20" ID="ResizeButton" />
+			<GridButton Anchor="L,T" Offset="20,100" Size="100,34" String="TXT_KEY_CLOSE" Font="TwCenMT20" Style="BaseButton" ConsumeMouse="1" ID="CloseButton" />            
+
+			
+            <!--The legend-->
+			<Grid Size="230,150" Anchor="L,B" Offset="20,68" Style="WindowGridBlack" ID="Legend">
+				<Stack Anchor="C,C" Offset="0,0" Size="128,128" StackGrowth="Bottom" Padding="12" >
+					<GridButton Anchor="C,C" Size="200,32" Color="255,255,255,230"  Offset="0,0" StateOffsetIncrement="0,0" ToolTip="TXT_KEY_PROMO_EARNT_TT" >
+						<GridData Style="Grid9Gold8" />
+						<Grid Anchor="C,C" Offset="0,0" Size="204,36" Padding="0,0" Style="Grid9FrameGold"/>
+						<Label Anchor="C,C" AnchorSide="I,O" Offset="0,0" Font="TwCenMT20" Color0="Black" Color1="Beige,200" FontStyle="Shadow" String="TXT_KEY_PROMO_EARNT" />
+					</GridButton>
+
+					<GridButton Anchor="C,C" Size="200,32" Color="255,255,255,200"  Offset="0,0" StateOffsetIncrement="0,0" ToolTip="TXT_KEY_PROMO_AVAILABLE_TT" >
+						<GridData Style="Grid9Green8" />
+						<Grid Anchor="C,C" Offset="0,0" Size="204,36" Padding="0,0" Style="Grid9Frame"/>
+						<Label Anchor="C,C" AnchorSide="I,O" Offset="0,0" Font="TwCenMT20" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" String="TXT_KEY_PROMO_AVAILABLE" />
+					</GridButton>
+
+					<GridButton Anchor="C,C" Size="200,32" Color="255,255,255,200"  Offset="0,0" StateOffsetIncrement="0,0" ToolTip="TXT_KEY_PROMO_NOT_AVAILABLE_TT" >
+						<GridData Style="Grid9BlackTint8" />
+						<Grid Anchor="C,C" Offset="0,0" Size="204,36" Padding="0,0" Style="Grid9Frame"/>
+						<Label Anchor="C,C" AnchorSide="I,O" Offset="0,0" Font="TwCenMT20" ColorSet="Beige_Black_Alpha" FontStyle="Shadow" String="TXT_KEY_PROMO_NOT_AVAILABLE" />
+					</GridButton>
+				</Stack>
+			</Grid>
+
+			<!-- 127 = CloseButton.SizeX + CloseButton.OffsetX + 7 -->
+			<UpButton   Offset="0,0" Anchor="L,B" AnchorSide="i,o" Style="ScrollBarLeft"  />
+			<DownButton Offset="2,0"   Anchor="R,B" AnchorSide="i,o" Style="ScrollBarRight" />
+			<ScrollBar  Offset="19,0"  Anchor="R,B" AnchorSide="i,o" Style="ScrollBar" Length="900" ID="ScrollBar" /> <!-- Length is re-calculated -->
+		</ScrollPanel>
+        <Grid Anchor="L,T" Offset="10,146" Size="250,250" Style="WindowGridBlack" Hidden="1" ID="UnitStatsPanel">
+            <ScrollPanel Anchor="L,T" Offset="7,5" Size="224,240" Vertical="1" AutoScrollBar="1" ConsumeMouseWheel="1" ID="UnitStatsScroll">
+                <Stack Anchor="L,T" StackGrowth="Bottom" Padding="2" ID="UnitStatsStack"/>
+                <ScrollBar Style="VertSlider" Anchor="R,C" AnchorSide="O,I" ID="UnitStatsScrollBar"/>
+                <UpButton Style="ScrollBarUp" Anchor="R,T" AnchorSide="O,I"/>
+                <DownButton Style="ScrollBarDown" Anchor="R,B" AnchorSide="O,I"/>
+            </ScrollPanel>
+        </Grid>
+
+		<!-- Independent from the horizontal tree scroll area. -->
+		<Grid Anchor="L,T" Offset="20,630" Size="230,210" Style="WindowGridBlack"
+			Hidden="1" ID="ExtraPromotionsPanel">
+			<Label Anchor="L,T" Offset="8,4" Size="214,24" Font="TwCenMT20"
+				ColorSet="Beige_Black_Alpha" FontStyle="Shadow" String="Other Promotions" />
+			<ScrollPanel Anchor="L,T" Offset="8,31" Size="198,171" Vertical="1" AutoScrollBar="1"
+				ConsumeMouseWheel="1" ID="ExtraPromotionsScroll">
+				<Stack Anchor="L,T" Size="198,48" StackGrowth="Bottom" Padding="2"
+					ID="ExtraPromotionsStack" />
+				<ScrollBar Style="VertSlider" Length="135" Offset="0,18" Anchor="R,T" AnchorSide="O,I" ID="ExtraPromotionsScrollBar" />
+				<UpButton Style="ScrollBarUp" Anchor="R,T" AnchorSide="O,I" />
+				<DownButton Style="ScrollBarDown" Anchor="R,B" AnchorSide="O,I" />
+			</ScrollPanel>
+		</Grid>
+	</Box>
+
+
+</Context>
