@@ -106,6 +106,8 @@ local JUNCTIONS = {
 -- route's logical vertex at the intersection of those two contact bands.
 local H_CENTER_Y, V_CENTER_X = 11, 11
 local TURN_TRIM = 21
+-- A branch curve meets the straight band this far from its vertex.
+local CURVE_TANGENT = 8
 local legacyRouteUnit = 8 -- compatibility with old TreeLayout calls
 local instanceManager = nil
 local captureNativePiece = nil -- optional offline native-pixel audit
@@ -132,6 +134,7 @@ local function screenCoordinate(value, scale, offset)
   return pixel(value * scale + offset)
 end
 
+-- A piece normally turns opaque under hover; focusedAlpha 0 hides it instead.
 local function emitNativePiece(
   texture,
   x,
@@ -143,13 +146,15 @@ local function emitNativePiece(
   atlasX,
   atlasY,
   colour,
-  owners
+  owners,
+  focusedAlpha
 )
   if not instanceManager or width <= 0 or height <= 0 then
     return
   end
   local tint = resolvePipeColor(colour)
   local r, g, b, a = tint.x or tint[1], tint.y or tint[2], tint.z or tint[3], tint.w or tint[4]
+  focusedAlpha = focusedAlpha or 1
   local identity = table.concat({
     texture,
     x,
@@ -164,6 +169,7 @@ local function emitNativePiece(
     string.format("%.17g", g),
     string.format("%.17g", b),
     string.format("%.17g", a),
+    focusedAlpha,
   }, "|")
   local descriptor = piecesByIdentity[identity]
   if not descriptor then
@@ -181,6 +187,7 @@ local function emitNativePiece(
       g = g,
       b = b,
       a = a,
+      focusedAlpha = focusedAlpha,
       colour = colour,
       owners = {},
     }
@@ -250,7 +257,12 @@ function PipeManagerHighlightEdges(edgeKeys)
   for piece in pairs(nextFocusedPieces) do
     if not piece.focused and piece.icon then
       piece.icon:SetColor(
-        Color(piece.r * HOVER_BLUE_R, piece.g * HOVER_BLUE_G, piece.b * HOVER_BLUE_B, 1)
+        Color(
+          piece.r * HOVER_BLUE_R,
+          piece.g * HOVER_BLUE_G,
+          piece.b * HOVER_BLUE_B,
+          piece.focusedAlpha
+        )
       )
       piece.focused = true
     end
@@ -258,7 +270,7 @@ function PipeManagerHighlightEdges(edgeKeys)
   focusedPieces = nextFocusedPieces
 end
 
-local function drawHorizontal(x0, x1, y, scale, offsetX, offsetY, colour, owners)
+local function drawHorizontal(x0, x1, y, scale, offsetX, offsetY, colour, owners, focusedAlpha)
   local left = screenCoordinate(math.min(x0, x1), scale, offsetX)
   local right = screenCoordinate(math.max(x0, x1), scale, offsetX)
   local top = screenCoordinate(y - H_CENTER_Y, scale, offsetY)
@@ -275,12 +287,13 @@ local function drawHorizontal(x0, x1, y, scale, offsetX, offsetY, colour, owners
       0,
       0,
       colour,
-      owners
+      owners,
+      focusedAlpha
     )
   end
 end
 
-local function drawVertical(x, y0, y1, scale, offsetX, offsetY, colour, owners)
+local function drawVertical(x, y0, y1, scale, offsetX, offsetY, colour, owners, focusedAlpha)
   local left = screenCoordinate(x - V_CENTER_X, scale, offsetX)
   local right = screenCoordinate(x - V_CENTER_X + NATIVE_TILE_WIDTH, scale, offsetX)
   local top = screenCoordinate(math.min(y0, y1), scale, offsetY)
@@ -297,7 +310,8 @@ local function drawVertical(x, y0, y1, scale, offsetX, offsetY, colour, owners)
       0,
       0,
       colour,
-      owners
+      owners,
+      focusedAlpha
     )
   end
 end
@@ -335,7 +349,7 @@ local function cornerKind(a, b)
   return (a == "N" or b == "N") and "EN" or "ES"
 end
 
-local function drawCorner(x, y, kind, scale, offsetX, offsetY, colour, owners)
+local function drawCorner(x, y, kind, scale, offsetX, offsetY, colour, owners, focusedAlpha)
   local cell = CORNERS[kind]
   if not cell then
     return
@@ -358,7 +372,8 @@ local function drawCorner(x, y, kind, scale, offsetX, offsetY, colour, owners)
     cell.offsetX + cell.cropX,
     cell.offsetY + cell.cropY,
     colour,
-    owners
+    owners,
+    focusedAlpha
   )
 end
 
@@ -1058,6 +1073,7 @@ local function networkNodes(atoms, routes, settings)
               break
             end
           end
+          node.flowStem = stem
           if node.arms[opposite[stem]] then
             node.flowAxis = (stem == "W" or stem == "E") and "H" or "V"
             -- A centre run crosses the branch point, but a turning route
@@ -1225,30 +1241,86 @@ function PipeManagerDrawNetwork(routes, options)
     return screenCoordinate(x, settings.scale, settings.offsetX),
       screenCoordinate(y, settings.scale, settings.offsetY)
   end
-  local function horizontal(lo, hi, y, colour, owners)
+  local function horizontal(lo, hi, y, colour, owners, focusedAlpha)
     if settings.nativeArt then
       local x0, py = position(lo, y)
       local x1 = screenCoordinate(hi, settings.scale, settings.offsetX)
-      drawHorizontal(x0, x1, py, 1, 0, 0, colour, owners)
+      drawHorizontal(x0, x1, py, 1, 0, 0, colour, owners, focusedAlpha)
     else
-      drawHorizontal(lo, hi, y, settings.scale, settings.offsetX, settings.offsetY, colour, owners)
+      drawHorizontal(
+        lo,
+        hi,
+        y,
+        settings.scale,
+        settings.offsetX,
+        settings.offsetY,
+        colour,
+        owners,
+        focusedAlpha
+      )
     end
   end
-  local function vertical(x, lo, hi, colour, owners)
+  local function vertical(x, lo, hi, colour, owners, focusedAlpha)
     if settings.nativeArt then
       local px, y0 = position(x, lo)
       local y1 = screenCoordinate(hi, settings.scale, settings.offsetY)
-      drawVertical(px, y0, y1, 1, 0, 0, colour, owners)
+      drawVertical(px, y0, y1, 1, 0, 0, colour, owners, focusedAlpha)
     else
-      drawVertical(x, lo, hi, settings.scale, settings.offsetX, settings.offsetY, colour, owners)
+      drawVertical(
+        x,
+        lo,
+        hi,
+        settings.scale,
+        settings.offsetX,
+        settings.offsetY,
+        colour,
+        owners,
+        focusedAlpha
+      )
     end
   end
-  local function corner(x, y, kind, colour, owners, compact)
+  local function corner(x, y, kind, colour, owners, compact, focusedAlpha)
     if settings.nativeArt and not compact then
       local px, py = position(x, y)
-      drawCorner(px, py, kind, 1, 0, 0, colour, owners)
+      drawCorner(px, py, kind, 1, 0, 0, colour, owners, focusedAlpha)
     else
-      drawCorner(x, y, kind, settings.scale, settings.offsetX, settings.offsetY, colour, owners)
+      drawCorner(
+        x,
+        y,
+        kind,
+        settings.scale,
+        settings.offsetX,
+        settings.offsetY,
+        colour,
+        owners,
+        focusedAlpha
+      )
+    end
+  end
+  -- A flow node's curves lie under its straight band, so a hovered straight
+  -- route covers the neutral curves; but a hovered curve must cover the
+  -- neutral band. Each flow piece is drawn twice: the copy in place hides
+  -- under hover, and a transparent twin above every pipe shows instead.
+  -- Hovered pieces thus cover neutral ones and keep their own order.
+  local function flowNode(node, colour, focusedAlpha)
+    for _, kind in ipairs(node.flowCorners) do
+      corner(node.x, node.y, kind, colour, node.flowCornerOwners[kind], node.compact, focusedAlpha)
+    end
+    -- The band's halves meet where the branch curve joins it, a little past
+    -- the vertex on the stem side: splitting at the vertex would tint the
+    -- straight-through pipe before the hovered curve has reached it.
+    local nativeNode = settings.nativeArt and not node.compact
+    local trim = nativeNode and TURN_TRIM / settings.scale or TURN_TRIM
+    local tangent = nativeNode and CURVE_TANGENT / settings.scale or CURVE_TANGENT
+    local stem = node.flowStem
+    if node.flowAxis == "H" then
+      local split = node.x + (stem == "E" and tangent or stem == "W" and -tangent or 0)
+      horizontal(node.x - trim, split, node.y, colour, node.flowArmOwners.W, focusedAlpha)
+      horizontal(split, node.x + trim, node.y, colour, node.flowArmOwners.E, focusedAlpha)
+    elseif node.flowAxis == "V" then
+      local split = node.y + (stem == "S" and tangent or stem == "N" and -tangent or 0)
+      vertical(node.x, node.y - trim, split, colour, node.flowArmOwners.N, focusedAlpha)
+      vertical(node.x, split, node.y + trim, colour, node.flowArmOwners.S, focusedAlpha)
     end
   end
   for i = 1, #plan.atoms do
@@ -1266,21 +1338,7 @@ function PipeManagerDrawNetwork(routes, options)
     local colour = options and (options.colour or options.shade) or node.colour
     local nativeNode = settings.nativeArt and not node.compact
     if node.flowCorners then
-      for _, kind in ipairs(node.flowCorners) do
-        corner(node.x, node.y, kind, colour, node.flowCornerOwners[kind], node.compact)
-      end
-      -- Draw the shared straight contact band last. Its two halves already
-      -- have exact arm ownership, and must not be covered by a neutral
-      -- diverging curve when the hovered connection continues straight.
-      if node.flowAxis == "H" then
-        local trim = nativeNode and TURN_TRIM / settings.scale or TURN_TRIM
-        horizontal(node.x - trim, node.x, node.y, colour, node.flowArmOwners.W)
-        horizontal(node.x, node.x + trim, node.y, colour, node.flowArmOwners.E)
-      elseif node.flowAxis == "V" then
-        local trim = nativeNode and TURN_TRIM / settings.scale or TURN_TRIM
-        vertical(node.x, node.y - trim, node.y, colour, node.flowArmOwners.N)
-        vertical(node.x, node.y, node.y + trim, colour, node.flowArmOwners.S)
-      end
+      flowNode(node, colour, 0)
     elseif node.junction then
       if nativeNode then
         local px, py = position(node.x, node.y)
@@ -1304,6 +1362,14 @@ function PipeManagerDrawNetwork(routes, options)
         drawCompactCornerShoulder(node.x, node.y, node.corner, settings, colour, node.owners)
       end
       corner(node.x, node.y, node.corner, colour, node.owners, node.compact)
+    end
+  end
+  -- Hover twins of every flow node (see flowNode).
+  for i = 1, #plan.nodes do
+    local node = plan.nodes[i]
+    if node.flowCorners then
+      local tint = resolvePipeColor(options and (options.colour or options.shade) or node.colour)
+      flowNode(node, Color(tint.x or tint[1], tint.y or tint[2], tint.z or tint[3], 0))
     end
   end
   return true

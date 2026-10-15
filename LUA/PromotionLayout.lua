@@ -824,12 +824,23 @@ local function routeInteractions(a, b)
   return crossings, overlaps
 end
 
+-- Painted cards are a fixed 160px wide. Below the scale where the logical
+-- button is that wide, the card overhangs it and hides the start of every
+-- left/right stub; the visible remainder must still hold a 21px elbow arm.
+local function sidePortMinimum(routeOptions)
+  local scale = routeOptions.scale or 1
+  local overhang =
+    max(0, ((routeOptions.paintedCardW or 160) - routeOptions.buttonW * scale) / (2 * scale))
+  return overhang > 0 and math.ceil(21 + overhang + 1 / scale) or 21
+end
+
 local function buildRoutingGrid(buttons, width, height, routeOptions)
   local cardWidth, cardHeight = routeOptions.buttonW, routeOptions.buttonH
   local half = routeOptions.pipeHalfWidth or 8
   local cx, cy = routeOptions.cornerHalfW or 16, routeOptions.cornerHalfH or 21
   -- The native renderer trims 21 logical pixels from every elbow arm.
-  local stubX, stubY = max(24, cx + half + 3), max(24, cy + half + 3)
+  local stubX, stubY =
+    max(24, cx + half + 3, sidePortMinimum(routeOptions)), max(24, cy + half + 3)
   local insetX, insetY = max(cx, half) + 2, max(cy, half) + 2
   local xs, ys =
     { [round(insetX)] = true, [round(width - insetX)] = true },
@@ -1038,6 +1049,13 @@ local function guideDistance(guide, x, y)
   return best == math.huge and 0 or best
 end
 
+-- A pipe that reverses direction (runs past its card and comes back, or
+-- dips and climbs again) costs two and a half crossings, like a top or
+-- bottom entry: in search units (20000 per crossing) and in route-ranking
+-- units (1000000 per crossing).
+local REVERSAL_SEARCH_PENALTY = 50000
+local REVERSAL_PENALTY = 2500000
+
 local function findShortestRoute(grid, occupancy, edge, start, goal, options, guide)
   local startColumn, startRow = grid.xm[start.x], grid.ym[start.y]
   local goalColumn, goalRow = grid.xm[goal.x], grid.ym[goal.y]
@@ -1077,6 +1095,13 @@ local function findShortestRoute(grid, occupancy, edge, start, goal, options, gu
   heapPush(heap, heuristic(startColumn, startRow), initialState)
   local goalState, bestCost = nil, math.huge
   local explored, limit = 0, options.maxSearchStates or 18000
+  -- Turning away from the goal starts a detour that must later turn back:
+  -- a pipe that runs past its card and returns, or dips and climbs again.
+  -- Only a detour that avoids three crossings is worth it. With no offset
+  -- on an axis, both legs of a jog move away, so each pays half.
+  local signX = goal.x > start.x and 1 or goal.x < start.x and -1 or 0
+  local signY = goal.y > start.y and 1 or goal.y < start.y and -1 or 0
+  local reversalPenalty = options.reversalPenalty or REVERSAL_SEARCH_PENALTY
   local minimumHorizontalLeg = options.minHorizontalLeg or 42
   local minimumVerticalLeg = options.minVerticalLeg or 42
   local horizontalEdgePenalties, verticalEdgePenalties, horizontalNodePenalties, verticalNodePenalties =
@@ -1121,6 +1146,16 @@ local function findShortestRoute(grid, occupancy, edge, start, goal, options, gu
             or (direction == 3 and nextDirection == 4)
             or (direction == 4 and nextDirection == 3)
           if not reversal and (nextDirection == direction or grid.turn[node]) then
+            local away = 0
+            if nextDirection ~= direction then
+              local sign, step = signX, dx
+              if dx == 0 then
+                sign, step = signY, dy
+              end
+              if step ~= sign then
+                away = sign == 0 and reversalPenalty / 2 or reversalPenalty
+              end
+            end
             local runColumn, runRow = column, row
             local runLength, runCost = 0, 0
             while true do
@@ -1185,6 +1220,7 @@ local function findShortestRoute(grid, occupancy, edge, start, goal, options, gu
                 local candidate = pathCost
                   + runLength
                   + runCost
+                  + away
                   + (nextDirection ~= direction and 24 or 0)
                 local nextStateID = encodeSearchState(nextNode, nextDirection)
                 if
@@ -1221,6 +1257,29 @@ local function findShortestRoute(grid, occupancy, edge, start, goal, options, gu
   return points, explored
 end
 
+-- Direction reversals along each axis: right then left, or up then down.
+local function routeReversals(points)
+  local count, sx, sy = 0, 0, 0
+  for i = 2, #points do
+    local dx, dy = points[i].x - points[i - 1].x, points[i].y - points[i - 1].y
+    if dx ~= 0 then
+      local sign = dx > 0 and 1 or -1
+      if sx ~= 0 and sign ~= sx then
+        count = count + 1
+      end
+      sx = sign
+    end
+    if dy ~= 0 then
+      local sign = dy > 0 and 1 or -1
+      if sy ~= 0 and sign ~= sy then
+        count = count + 1
+      end
+      sy = sign
+    end
+  end
+  return count
+end
+
 local function simplify(points)
   local out = {}
   for i = 1, #points do
@@ -1254,7 +1313,7 @@ local function routeSelfClear(points, routeOptions)
     local length = abs(a.x - b.x) + abs(a.y - b.y)
     local horizontal = a.y == b.y
     local endpointLeg = i == 1 or i == #points - 1
-    local minimum = endpointLeg and 21 or 42
+    local minimum = endpointLeg and (horizontal and sidePortMinimum(routeOptions) or 21) or 42
     if #points > 2 and length < minimum then
       return false, "short bend leg"
     end
@@ -1484,6 +1543,90 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
     end
     return true
   end
+  -- Every bend and branch is drawn with native elbow art that trims 21px
+  -- from each arm. Two of them on one continuous pipe line therefore need
+  -- 42px between them; closer ones fail PipeManagerValidateNetwork after
+  -- routing has finished, discarding the whole layout.
+  local function junctionSpacingClear(route)
+    local spacing = 42
+    local function covered(horizontal, fixed, lo, hi)
+      local function covers(points)
+        for k = 1, #points - 1 do
+          local u, v = points[k], points[k + 1]
+          if horizontal and u.y == fixed and v.y == fixed then
+            if min(u.x, v.x) <= lo and max(u.x, v.x) >= hi then
+              return true
+            end
+          elseif not horizontal and u.x == fixed and v.x == fixed then
+            if min(u.y, v.y) <= lo and max(u.y, v.y) >= hi then
+              return true
+            end
+          end
+        end
+        return false
+      end
+      if covers(route.points) then
+        return true
+      end
+      for _, prior in ipairs(accepted) do
+        if covers(prior.points) then
+          return true
+        end
+      end
+      return false
+    end
+    local function tooClose(u, v)
+      if u.y == v.y and u.x ~= v.x and abs(u.x - v.x) < spacing then
+        return covered(true, u.y, min(u.x, v.x), max(u.x, v.x))
+      end
+      if u.x == v.x and u.y ~= v.y and abs(u.y - v.y) < spacing then
+        return covered(false, u.x, min(u.y, v.y), max(u.y, v.y))
+      end
+      return false
+    end
+    local function onRoute(point)
+      local points = route.points
+      for k = 1, #points - 1 do
+        local u, v = points[k], points[k + 1]
+        if
+          (u.y == v.y and point.y == u.y and point.x >= min(u.x, v.x) and point.x <= max(u.x, v.x))
+          or (u.x == v.x and point.x == u.x and point.y >= min(u.y, v.y) and point.y <= max(u.y, v.y))
+        then
+          return true
+        end
+      end
+      return false
+    end
+    -- Nodes this route creates: its own bends, and existing bends it now
+    -- connects by running along their line.
+    local mine, others = {}, {}
+    for k = 2, #route.points - 1 do
+      mine[#mine + 1] = route.points[k]
+    end
+    for _, prior in ipairs(accepted) do
+      for k = 2, #prior.points - 1 do
+        local point = prior.points[k]
+        others[#others + 1] = point
+        if onRoute(point) then
+          mine[#mine + 1] = point
+        end
+      end
+    end
+    for i = 1, #mine do
+      local u = mine[i]
+      for j = i + 1, #mine do
+        if tooClose(u, mine[j]) then
+          return false
+        end
+      end
+      for j = 1, #others do
+        if tooClose(u, others[j]) then
+          return false
+        end
+      end
+    end
+    return true
+  end
   local function crossingsRenderable(route)
     local clearance = (routeOptions.underpassHalfGap or 10) + 21
     local function axisClearance(horizontal, x, y)
@@ -1612,6 +1755,7 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
     if
       not artworkClear(route)
       or not sharedJunctionsClear(route)
+      or not junctionSpacingClear(route)
       or not routeSelfClear(route.points, routeOptions)
       or not routeBendsClear(route.points, buttons, routeOptions)
     then
@@ -1816,14 +1960,18 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
           simple = consider({ p, q })
         end
         if not simple then
+          -- Tracks snap to grid columns: occupancy only records on-grid
+          -- segments, and an off-grid pipe is invisible to later searches.
           local middle = (p.x + q.x) / 2
+          local lo, hi = p.x + 22, q.x - 22
           local tracks = {
-            round(middle),
-            round(p.x + max(42, grid.stubX)),
-            round(q.x - max(42, grid.stubX)),
+            nearest(grid.xs, middle, lo, hi),
+            nearest(grid.xs, p.x + max(42, grid.stubX), lo, hi),
+            nearest(grid.xs, q.x - max(42, grid.stubX), lo, hi),
           }
-          for _, x in ipairs(tracks) do
-            if x > p.x + 21 and x < q.x - 21 then
+          for t = 1, 3 do
+            local x = tracks[t]
+            if x then
               simple = consider({ p, { x = x, y = p.y }, { x = x, y = q.y }, q })
               if simple then
                 break
@@ -1872,6 +2020,7 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
           selfClear
           and artworkClear(route)
           and sharedJunctionsClear(route)
+          and junctionSpacingClear(route)
           and routeBendsClear(route.points, buttons, routeOptions)
         then
           local crosses, overlaps, incidentOverlap = 0, 0, false
@@ -1901,8 +2050,10 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
                 deviation = deviation + guideDistance(guide, route.points[j].x, route.points[j].y)
               end
             end
+            local reversals = routeReversals(route.points)
             local key = overlaps * 10000000
               + crosses * 1000000
+              + reversals * REVERSAL_PENALTY
               + deviation * (routeOptions.guideCandidateWeight or 4)
               + length
               + 24 * (#route.points - 2)
@@ -1911,7 +2062,7 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
             if not bestKey or key < bestKey then
               best, bestKey, bestPenalized = route, key, entryPenalty > 0
             end
-            if crosses == 0 and i >= 2 then
+            if crosses == 0 and reversals == 0 and i >= 2 then
               break
             end
           end

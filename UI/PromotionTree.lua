@@ -770,6 +770,14 @@ function OnDisplay(unitID)
   Controls.SwitchModeButton:SetHide(false)
   selectedUnitID = unitID
   dprint("OnDisplay(%i)", selectedUnitID or 0)
+  if not isTreeVisible then
+    -- Every opening starts with Small cards; D switches to Normal until the
+    -- panel closes. Switching mode while open keeps the chosen size.
+    if usesLargeCards then
+      Resize(config.small)
+    end
+    Controls.ResizeButton:SetCheck(true)
+  end
 
   UIManager:QueuePopup(ContextPtr, PopupPriority.BarbarianCamp)
 end
@@ -986,8 +994,8 @@ end
 function Init()
   dprint("Init()")
 
-  Resize(OptionsManager.GetSmallUIAssets() and config.small or config.normal)
-  Controls.ResizeButton:SetCheck(OptionsManager.GetSmallUIAssets())
+  Resize(config.small)
+  Controls.ResizeButton:SetCheck(true)
   Hide()
 end
 

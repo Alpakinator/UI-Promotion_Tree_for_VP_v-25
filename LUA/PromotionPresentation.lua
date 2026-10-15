@@ -959,12 +959,17 @@ function PromotionLayoutChoose(graph, geometry)
       candidate.alternate = nil
       local checked, accepted, rendered
       candidate, checked, accepted, rendered = evaluate(candidate)
-      if not (checked and accepted) and alternate then
+      if alternate then
         -- A rejected solver result may carry a free-entry routing of the
-        -- same tree that the clearance repair can still rescue.
+        -- same tree that the clearance repair can also rescue. Repair both
+        -- and keep the better drawing.
         alternate.method = builder.name
         local other, otherChecked, otherAccepted, otherRendered = evaluate(alternate)
-        if otherChecked and otherAccepted then
+        if
+          otherChecked
+          and otherAccepted
+          and (not (checked and accepted) or PromotionLayoutBetter(other, candidate))
+        then
           candidate, checked, accepted, rendered = other, otherChecked, otherAccepted, otherRendered
         end
       end
