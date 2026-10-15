@@ -176,13 +176,6 @@ local function assignProfileName(profile, data)
       label = "HELICOPTER"
     elseif profile.Capabilities.mounted then
       label = "MOUNTED_RANGED"
-    else
-      for _, row in ipairs(profile.Rows) do
-        if (row.MinimumRangeRequired or 0) > profile.Capabilities.range then
-          profile.Name = roleLabel("RANGED") .. " — " .. profile.UnitName
-          return
-        end
-      end
     end
   elseif profile.CombatClass == "UNITCOMBAT_GUN" and profile.Capabilities.intercept > 0 then
     label = "ANTI_AIR"
@@ -192,41 +185,51 @@ local function assignProfileName(profile, data)
   profile.Name = label and roleLabel(label)
     or Catalog.Name(data.classes[profile.CombatClass].Description)
 end
-local function distinguishingVariantSuffix(profile, peers, data)
-  -- Prefer the first promotion in a distinguishing added chain. A restricted
-  -- subset without added branches falls back to its representative's game name.
-  for _, key in ipairs(profile.Graph.order) do
-    local unique = true
-    for _, other in ipairs(peers) do
-      if other ~= profile and other.Graph.nodes[key] then
-        unique = false
-        break
+-- Entries that share a base name are told apart by data, not by a list of
+-- known units. The entry with the most regular (buildable, non-gift) unit
+-- types is the main one and keeps the plain name; every other entry is named
+-- after the first word of its earliest unit in the tech tree ("Ranged —
+-- Drone"). Colliding first words use the full unit name instead. `used`
+-- holds every label already taken, so a variant never repeats another name.
+local function nameVariants(peers, used)
+  local function before(a, b)
+    if a.RegularUnits ~= b.RegularUnits then
+      return a.RegularUnits > b.RegularUnits
+    end
+    for i = 1, #a.EarliestOrder do
+      if a.EarliestOrder[i] ~= b.EarliestOrder[i] then
+        return a.EarliestOrder[i] < b.EarliestOrder[i]
       end
     end
-    if unique then
-      local node = profile.Graph.nodes[key]
-      local isRoot = true
-      for _, parent in ipairs(node.parents) do
-        local shared = false
-        for _, other in ipairs(peers) do
-          if other ~= profile and other.Graph.nodes[parent] then
-            shared = true
-            break
-          end
-        end
-        if not shared then
-          isRoot = false
-          break
-        end
-      end
-      if isRoot then
-        local row = data.promotions[key]
-        local text = Catalog.Name(row and row.Description or node.name or key)
-        return text:gsub("[ _][0-9IVX]+$", "")
-      end
+    return a.Key < b.Key
+  end
+  local main = peers[1]
+  for i = 2, #peers do
+    if before(peers[i], main) then
+      main = peers[i]
     end
   end
-  return profile.UnitName
+  local base, variants, wordOf, wordCount = main.Name, {}, {}, {}
+  for _, profile in ipairs(peers) do
+    if profile ~= main then
+      local word = profile.EarliestUnitName:match("%S+") or profile.EarliestUnitName
+      variants[#variants + 1] = profile
+      wordOf[profile] = word
+      wordCount[word] = (wordCount[word] or 0) + 1
+    end
+  end
+  for _, profile in ipairs(variants) do
+    local label = base .. " — " .. wordOf[profile]
+    if wordCount[wordOf[profile]] > 1 or used[label] then
+      label = base .. " — " .. profile.EarliestUnitName
+    end
+    local unique, copy = label, 2
+    while used[unique] do
+      unique, copy = label .. " " .. copy, copy + 1
+    end
+    profile.Name = unique
+    used[unique] = true
+  end
 end
 
 -- Graph eligibility depends on class, capabilities and starting grants, not
@@ -388,7 +391,6 @@ function Catalog.Build(data)
           profile.Key = combatClass .. "|" .. unit.Type
           profile.Timeline = { unitUnlockOrder(unit) }
           profile.Name = Catalog.Name(data.classes[combatClass].Description)
-          profile.UnitName = Catalog.Name(unit.Description)
           profile.Graph = graph
           profilesBySignature[signature] = profile
           profiles[#profiles + 1] = profile
@@ -412,23 +414,45 @@ function Catalog.Build(data)
     profile.FirstUnitType, profile.LastUnitType = first.Type, last.Type
     local firstName, lastName = translate(first.Description), translate(last.Description)
     profile.UnitRange = firstName == lastName and firstName or firstName .. " - " .. lastName
+    -- A variant is named after the unit a player meets first in the tech
+    -- tree. Gifts, policy and unbuildable units count only if nothing else does.
+    local earliest, earliestOrder, regularUnits = nil, nil, 0
+    for _, key in ipairs(profile.UnitTypes) do
+      local unit = unitsByType[key]
+      local special = representativePreference(unit) == 2
+      if not special then
+        regularUnits = regularUnits + 1
+      end
+      local order = { special and 1 or 0, unitUnlockOrder(unit) }
+      local earlier = not earliestOrder
+      if not earlier then
+        for i = 1, 4 do
+          if order[i] ~= earliestOrder[i] then
+            earlier = order[i] < earliestOrder[i]
+            break
+          end
+        end
+      end
+      if earlier then
+        earliest, earliestOrder = unit, order
+      end
+    end
+    profile.EarliestUnitName = Catalog.Name(earliest.Description)
+    profile.EarliestOrder, profile.RegularUnits = earliestOrder, regularUnits
     profile.Graph = BuildPromotionGraph(profile.CombatClass, nil, profile)
     assignProfileName(profile, data)
     profilesByName[profile.Name] = profilesByName[profile.Name] or {}
     table.insert(profilesByName[profile.Name], profile)
   end
-  for name, peers in pairs(profilesByName) do
-    if #peers > 1 then
-      local used = {}
-      for _, profile in ipairs(peers) do
-        local suffix = distinguishingVariantSuffix(profile, peers, data)
-        local label = name .. " — " .. suffix
-        if used[label] then
-          label = label .. " (" .. profile.UnitName .. ")"
-        end
-        profile.Name = label
-        used[label] = true
-      end
+  local names, used = {}, {}
+  for name in pairs(profilesByName) do
+    names[#names + 1] = name
+    used[name] = true
+  end
+  table.sort(names)
+  for _, name in ipairs(names) do
+    if #profilesByName[name] > 1 then
+      nameVariants(profilesByName[name], used)
     end
   end
   table.sort(profiles, function(a, b)

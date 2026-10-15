@@ -41,21 +41,21 @@ Layout derived from http://gaming.stackexchange.com/questions/15846/123</Descrip
     <File md5="F86593F57536E8314F9D7210AEF97CD4" import="1">LUA/DebugPrint.lua</File>
     <File md5="360245E9ED995469D219345804958059" import="1">LUA/PipeManager.lua</File>
     <File md5="DD440050EB26A6780F6A02B02D3F4957" import="1">LUA/PromotionAcceptance.lua</File>
-    <File md5="59F1B4C2BBCE14FB56F204A9C7D96178" import="1">LUA/PromotionClassCatalog.lua</File>
+    <File md5="B92624FE4917A41AB220DDE1711D78CC" import="1">LUA/PromotionClassCatalog.lua</File>
     <File md5="BC182DC5DB2BC62E56D6986C32BB678B" import="1">LUA/PromotionClassPlanner.lua</File>
-    <File md5="297D215CEA47FA8B789B9C4D7CFE1F9F" import="1">LUA/PromotionDenseLayout.lua</File>
+    <File md5="8A10C0A4079E4A0E488746F72C16B78C" import="1">LUA/PromotionDenseLayout.lua</File>
     <File md5="ABE885A9BDFABEDF9E44E157DC6D809E" import="1">LUA/PromotionEmbedding.lua</File>
     <File md5="C86E2123090014AC7D4F00F015A4419F" import="1">LUA/PromotionExtraPromotions.lua</File>
     <File md5="B3EF67F22A154109BCCC2F723C10567E" import="1">LUA/PromotionHover.lua</File>
-    <File md5="EED80117BCE7C0A21DFD0722E441BC51" import="1">LUA/PromotionLayout.lua</File>
-    <File md5="06FD365F78478749663A64C0CCD3A3F1" import="1">LUA/PromotionPresentation.lua</File>
+    <File md5="621E04F708C15CFD4FB36B1BFF7E5979" import="1">LUA/PromotionLayout.lua</File>
+    <File md5="502A2DC0E94E83BA27A68EBB34299F36" import="1">LUA/PromotionPresentation.lua</File>
     <File md5="6A1379EE7B9522FB78EB3F4A69156604" import="1">LUA/PromotionReviewedLayouts.lua</File>
     <File md5="20DF40C97CE25CEDDE72F0868A9058D3" import="1">LUA/PromotionStatsPanel.lua</File>
     <File md5="1159ED827B28D5F3F94C62BC1E147EAF" import="1">LUA/PromotionUnitStats.lua</File>
     <File md5="C1A08FD6D24E01AB93D340E6E64353B1" import="1">LUA/PromotionUtils.lua</File>
     <File md5="5DE4A987126A84A9A1D8E2DBDD984C0F" import="1">LUA/SidebarCard.lua</File>
     <File md5="D276550C4D80DF9CB054FC4B1A5884A7" import="0">SQL/UIPromotionTree.sql</File>
-    <File md5="8B419FDB8D112808635A4AA7CEC2BE4E" import="0">UI/PromotionTree.lua</File>
+    <File md5="AD1405A4CDC27FCC87D53AE463B49D3A" import="0">UI/PromotionTree.lua</File>
     <File md5="672ECAC6F10942313B01F456E09EB1A9" import="0">UI/PromotionTree.xml</File>
     <File md5="31A8147B07B6E9BAE9749D691F3448A4" import="0">XML/UIPromotionTree.xml</File>
   </Files>

@@ -930,26 +930,42 @@ function PromotionLayoutChoose(graph, geometry)
   if not genericFirst then
     add("layered", PromotionLayoutSolve)
   end
+  local function evaluate(candidate)
+    local checked, accepted = pcall(PromotionCheckLayout, graph, candidate, geometry)
+    if checked and not accepted then
+      local repaired, variant = pcall(repairRouteClearance, graph, candidate, geometry)
+      if repaired and variant then
+        candidate = variant
+        accepted = variant.valid
+      end
+    end
+    local rendered = true
+    if checked and accepted and type(PromotionRenderedCardClear) == "function" then
+      local ok, clear =
+        pcall(PromotionRenderedCardClear, candidate, geometry.buttonW, geometry.buttonH, 160)
+      rendered = ok and clear == true
+      if not rendered then
+        accepted = false
+      end
+    end
+    return candidate, checked, accepted, rendered
+  end
   local best, failed
   for _, builder in ipairs(builders) do
     local ok, candidate, reason = pcall(builder.solve, graph, geometry)
     if ok and candidate then
       candidate.method = builder.name
-      local checked, accepted = pcall(PromotionCheckLayout, graph, candidate, geometry)
-      if checked and not accepted then
-        local repaired, variant = pcall(repairRouteClearance, graph, candidate, geometry)
-        if repaired and variant then
-          candidate = variant
-          accepted = variant.valid
-        end
-      end
-      local rendered = true
-      if checked and accepted and type(PromotionRenderedCardClear) == "function" then
-        local ok, clear =
-          pcall(PromotionRenderedCardClear, candidate, geometry.buttonW, geometry.buttonH, 160)
-        rendered = ok and clear == true
-        if not rendered then
-          accepted = false
+      local alternate = candidate.alternate
+      candidate.alternate = nil
+      local checked, accepted, rendered
+      candidate, checked, accepted, rendered = evaluate(candidate)
+      if not (checked and accepted) and alternate then
+        -- A rejected solver result may carry a free-entry routing of the
+        -- same tree that the clearance repair can still rescue.
+        alternate.method = builder.name
+        local other, otherChecked, otherAccepted, otherRendered = evaluate(alternate)
+        if otherChecked and otherAccepted then
+          candidate, checked, accepted, rendered = other, otherChecked, otherAccepted, otherRendered
         end
       end
       if checked and accepted then

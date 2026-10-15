@@ -535,6 +535,9 @@ local function routeDense(graph, placement, geometry)
   options.padding = geometry.padding or 24
   options.underpassHalfGap = geometry.underpassHalfGap or 10
   options.maxPortPairs = 8
+  -- This last-resort builder already trades readability for completeness;
+  -- let every port side compete rather than preferring left entries.
+  options.freeEntrySides = true
   options.maxSearchStates = 3000
   options.provenNonplanar = type(PromotionNonplanarCertificate) == "function"
       and PromotionNonplanarCertificate(graph) ~= nil

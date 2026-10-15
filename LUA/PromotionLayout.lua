@@ -495,6 +495,61 @@ local function placePromotionCards(data, layerOrder, last, width, height, routeO
     end
     lastRow = max(lastRow, row[id])
   end
+  -- The longest-path rows above pack every group upward. A group with no
+  -- constraint above it (a branch in otherwise empty late columns) would
+  -- then float to the top row, far from its prerequisites. Within the same
+  -- order constraints and row count, move each group to the median row of
+  -- its connected groups, which minimizes their total vertical pipe length.
+  local below, neighbours = {}, {}
+  for i = 1, #groups do
+    below[groups[i]], neighbours[groups[i]] = {}, {}
+  end
+  for i = 1, #groups do
+    for prior in pairs(before[groups[i]]) do
+      below[prior][#below[prior] + 1] = groups[i]
+    end
+  end
+  for i = 1, #data.names do
+    local name = data.names[i]
+    local children = data.children[name]
+    for j = 1, #children do
+      local a, b = groupOf[name], groupOf[children[j]]
+      if a ~= b then
+        neighbours[a][#neighbours[a] + 1] = b
+        neighbours[b][#neighbours[b] + 1] = a
+      end
+    end
+  end
+  for _ = 1, 4 * #groups do
+    local moved = false
+    for i = 1, #groups do
+      local id = groups[i]
+      local lo, hi = 0, lastRow
+      for prior in pairs(before[id]) do
+        lo = max(lo, row[prior] + 1)
+      end
+      for j = 1, #below[id] do
+        hi = min(hi, row[below[id][j]] - 1)
+      end
+      local rows = {}
+      for j = 1, #neighbours[id] do
+        rows[j] = row[neighbours[id][j]]
+      end
+      if #rows > 0 then
+        table.sort(rows)
+        -- Any row between the two middle values is optimal; keep the
+        -- current row when it is one of them, otherwise take the nearest.
+        local low, high = rows[floor((#rows + 1) / 2)], rows[floor(#rows / 2) + 1]
+        local target = max(lo, min(hi, max(low, min(high, row[id]))))
+        if target ~= row[id] then
+          row[id], moved = target, true
+        end
+      end
+    end
+    if not moved then
+      break
+    end
+  end
   local available = height - 2 * margin - cardHeight
   local rowPitch = lastRow > 0 and available / lastRow or 0
   if lastRow > 0 and rowPitch < separation then
@@ -1333,7 +1388,10 @@ local function addOccupancy(occ, grid, route)
   end
 end
 
-local function candidatePairs(a, b, cardWidth, cardHeight, maxPairs)
+-- Cost of entering a later-column card from above or below, in the router's
+-- crossing units (1000000 each): worth up to two underpasses on one edge.
+local LATE_ENTRY_PENALTY = 2500000
+local function candidatePairs(a, b, cardWidth, cardHeight, maxPairs, freeEntrySides)
   local acx, acy = a.x + cardWidth / 2, a.y + cardHeight / 2
   local bcx, bcy = b.x + cardWidth / 2, b.y + cardHeight / 2
   local pairs = {}
@@ -1364,10 +1422,27 @@ local function candidatePairs(a, b, cardWidth, cardHeight, maxPairs)
     return p[1] .. p[2] < q[1] .. q[2]
   end)
   local out = {}
-  for i = 1, min(#pairs, maxPairs or 5) do
-    out[i] = pairs[i]
+  maxPairs = maxPairs or 5
+  if freeEntrySides or b.x < a.x + cardWidth then
+    for i = 1, min(#pairs, maxPairs) do
+      out[i] = pairs[i]
+    end
+    return out, nil
   end
-  return out
+  -- A prerequisite in a later column is read left to right: try every way
+  -- into the child's left side first. The nearest other pairs remain as
+  -- marked last resorts for crowded trees that cannot be drawn otherwise.
+  for i = 1, #pairs do
+    if pairs[i][2] == "L" and pairs[i][1] ~= "L" then
+      out[#out + 1] = pairs[i]
+    end
+  end
+  for i = 1, min(#pairs, maxPairs) do
+    if pairs[i][2] ~= "L" then
+      out[#out + 1] = { pairs[i][1], pairs[i][2], pairs[i][3], true }
+    end
+  end
+  return out, pairs[1]
 end
 
 local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accepted, routeOptions)
@@ -1376,7 +1451,14 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
   local best, bestKey, explored = nil, nil, 0
   local fallback, fallbackKey
   local guide = routeOptions.guideMap and routeOptions.guideMap[edge.key]
-  local portPairs = candidatePairs(a, b, cardWidth, cardHeight, routeOptions.maxPortPairs)
+  local portPairs, freeFirst = candidatePairs(
+    a,
+    b,
+    cardWidth,
+    cardHeight,
+    routeOptions.maxPortPairs,
+    routeOptions.freeEntrySides
+  )
   local function sharedJunctionsClear(route)
     for _, prior in ipairs(accepted) do
       if route.parent == prior.parent and #route.points > 2 and #prior.points > 2 then
@@ -1571,6 +1653,7 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
     end
     return route, totalCrossings
   end
+  local entryPenalty, fallbackRank, bestPenalized = 0, nil, false
   local function consider(raw)
     local route = directCandidate(raw, false)
     if route then
@@ -1585,14 +1668,25 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
             + abs(crossed.points[k].x - crossed.points[k + 1].x)
             + abs(crossed.points[k].y - crossed.points[k + 1].y)
         end
-        local score = count * 100000 + length + 24 * (#crossed.points - 2)
+        local score = count * 100000 + length + 24 * (#crossed.points - 2) + entryPenalty
         if not fallbackKey or score < fallbackKey then
           fallback, fallbackKey = crossed, score
+          fallbackRank = count * 1000000 + length + 24 * (#crossed.points - 2) + entryPenalty
         end
       end
     end
   end
   for i = 1, #portPairs do
+    -- A left entry that needs an underpass or two still reads better than
+    -- a prerequisite entering a later-column card from above or below.
+    entryPenalty = portPairs[i][4] and LATE_ENTRY_PENALTY or 0
+    if
+      entryPenalty > 0
+      and ((bestKey and bestKey < entryPenalty) or (fallbackRank and fallbackRank < entryPenalty))
+    then
+      -- The remaining pairs are last resorts; none can beat this left entry.
+      break
+    end
     local sside, tside = portPairs[i][1], portPairs[i][2]
     local inset = min(cardWidth, cardHeight) / 2 - 1
     inset = min(inset, max(5, (routeOptions.pipeHalfWidth or 8) + 3))
@@ -1744,8 +1838,24 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
       elseif sdy ~= 0 and tdx ~= 0 then
         simple = consider({ p, { x = p.x, y = q.y }, q })
       end
+      if simple and entryPenalty == 0 then
+        -- Free-entry routing tries freeFirst first and would return this same
+        -- direct route; any other outcome may differ between the two modes.
+        local sameAsFree = not freeFirst
+          or (i == 1 and freeFirst[1] == sside and freeFirst[2] == tside)
+        return simple, explored, sameAsFree
+      end
       if simple then
-        return simple, explored
+        local length = 0
+        for j = 1, #simple.points - 1 do
+          local u, v = simple.points[j], simple.points[j + 1]
+          length = length + abs(u.x - v.x) + abs(u.y - v.y)
+        end
+        local key = entryPenalty + length + 24 * (#simple.points - 2)
+        if (not bestKey or key < bestKey) and (not fallbackRank or key < fallbackRank) then
+          return simple, explored, false
+        end
+        break
       end
       local middle, visited =
         findShortestRoute(grid, occupancy, edge, start, goal, routeOptions, guide)
@@ -1797,8 +1907,9 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
               + length
               + 24 * (#route.points - 2)
               + i
+              + entryPenalty
             if not bestKey or key < bestKey then
-              best, bestKey = route, key
+              best, bestKey, bestPenalized = route, key, entryPenalty > 0
             end
             if crosses == 0 and i >= 2 then
               break
@@ -1808,7 +1919,12 @@ local function routePrerequisite(edge, buttonOf, buttons, grid, occupancy, accep
       end
     end
   end
-  return best or fallback, explored
+  if best and bestPenalized and fallbackRank and fallbackRank < bestKey then
+    return fallback, explored, false
+  end
+  -- Without any route, free-entry routing (a subset of these pairs) fails too.
+  local sameAsFree = not freeFirst or not (best or fallback)
+  return best or fallback, explored, sameAsFree
 end
 
 local function layoutScoreLessThan(a, b)
@@ -1833,6 +1949,8 @@ local function layoutScoreLessThan(a, b)
 end
 
 -- Route caller-supplied positions; also used by independent planar placement.
+-- Later-column prerequisites prefer the child's left side unless the caller
+-- sets geometry.freeEntrySides, which lets every side compete on length.
 function PromotionLayoutRoute(graph, buttons, geometry)
   local routeOptions = {}
   for k, v in pairs(geometry or {}) do
@@ -1841,6 +1959,7 @@ function PromotionLayoutRoute(graph, buttons, geometry)
   assert(routeOptions.buttonW and routeOptions.buttonH, "buttonW and buttonH required")
   local cardWidth, cardHeight = routeOptions.buttonW, routeOptions.buttonH
   local data = graphData(graph)
+  local entryPreferenceMatters = false
   local width = routeOptions.width or routeOptions.defaultW or routeOptions.viewportW or 1638
   local height = routeOptions.height or routeOptions.defaultH or routeOptions.viewportH or 1040
   local buttonOf, orderedButtons = {}, {}
@@ -1944,7 +2063,7 @@ function PromotionLayoutRoute(graph, buttons, geometry)
     end
     for i = 1, math.min(#early, 2) do
       local edge = early[i].edge
-      local route = routePrerequisite(
+      local route, _, sameAsFree = routePrerequisite(
         edge,
         buttonOf,
         orderedButtons,
@@ -1953,6 +2072,7 @@ function PromotionLayoutRoute(graph, buttons, geometry)
         firstAccepted,
         routeOptions
       )
+      entryPreferenceMatters = entryPreferenceMatters or not sameAsFree
       if route then
         seeds[#seeds + 1] = route
         seeded[edge.key] = true
@@ -2120,7 +2240,7 @@ function PromotionLayoutRoute(graph, buttons, geometry)
   for i = 1, #order do
     local edge = order[i]
     if not seeded[edge.key] then
-      local route, count = routePrerequisite(
+      local route, count, sameAsFree = routePrerequisite(
         edge,
         buttonOf,
         orderedButtons,
@@ -2130,6 +2250,7 @@ function PromotionLayoutRoute(graph, buttons, geometry)
         routeOptions
       )
       visited = visited + count
+      entryPreferenceMatters = entryPreferenceMatters or not sameAsFree
       if route then
         accepted[#accepted + 1] = route
         routedSoFar[#routedSoFar + 1] = route
@@ -2373,6 +2494,8 @@ function PromotionLayoutRoute(graph, buttons, geometry)
       length = length,
       overlaps = overlapCount,
       overlapDetails = overlapDetails,
+      -- False when free-entry routing would have produced these same routes.
+      entryPreferenceMatters = entryPreferenceMatters,
     },
   }
   -- A late edge can be fenced out by an earlier route. Give the first missing
@@ -2427,115 +2550,164 @@ function PromotionLayoutSolve(graph, geometry)
     end
     return a.seed < b.seed
   end)
-  local best, examined = nil, 0
+  local best, alternate, examined = nil, nil, 0
+  -- Prerequisites are routed into later cards' left sides first. A plan's
+  -- free-entry twin, where top/bottom entries may compete, runs only while
+  -- nothing valid has been found, so it never displaces a left-entry layout.
+  -- It is also skipped when it would almost surely repeat its twin: the
+  -- left-entry rule changed none of the twin's routes, or the twin left a
+  -- prerequisite unrouted even after trying every entry side as a last resort.
+  local larger = math.sqrt(1.5)
   local plans = {
     { candidate = candidates[1], factor = 1 },
     { candidate = candidates[2], factor = 1 },
-    { candidate = candidates[1], factor = math.sqrt(1.5), compress = true },
-    { candidate = candidates[1], factor = math.sqrt(1.5) },
+    { candidate = candidates[1], factor = 1, freeEntrySides = true, twin = 1 },
+    { candidate = candidates[2], factor = 1, freeEntrySides = true, twin = 2 },
+    { candidate = candidates[1], factor = larger, compress = true },
+    { candidate = candidates[1], factor = larger, compress = true, freeEntrySides = true, twin = 5 },
+    { candidate = candidates[1], factor = larger },
+    { candidate = candidates[1], factor = larger, freeEntrySides = true, twin = 7 },
   }
-  for pi = 1, min(#plans, routeOptions.maxCandidates or 4) do
+  local planResults = {}
+  for pi = 1, min(#plans, routeOptions.maxCandidates or #plans) do
     local candidate, factor = plans[pi].candidate, plans[pi].factor
-    -- Exact proportional dimensions preserve both aspect and the area cap;
-    -- only the coordinates of individual controls are rounded to pixels.
-    local width, height = defaultW * factor, defaultH * factor
-    stageStart = timer and timer()
-    local buttons, warnings = placePromotionCards(
-      data,
-      candidate.order,
-      candidate.last,
-      width,
-      height,
-      routeOptions,
-      graph.chains
-    )
-    if timer then
-      stage.placement = stage.placement + timer() - stageStart
-    end
-    if plans[pi].compress then
-      local margin =
-        max(28, (routeOptions.cornerHalfH or 21) + (routeOptions.pipeHalfWidth or 8) + 5)
-      local left = margin + 52
-      local sx = (defaultW - left - margin - routeOptions.buttonW)
-        / (width - left - margin - routeOptions.buttonW)
-      local sy = (defaultH - 2 * margin - routeOptions.buttonH)
-        / (height - 2 * margin - routeOptions.buttonH)
-      for _, button in ipairs(buttons) do
-        button.x = round(left + (button.x - left) * sx)
-        button.y = round(margin + (button.y - margin) * sy)
-      end
-      width, height = defaultW, defaultH
-      factor = 1
-    end
-    local routeOpts = {}
-    for k, v in pairs(routeOptions) do
-      routeOpts[k] = v
-    end
-    routeOpts.width, routeOpts.height = width, height
-    routeOpts.defaultW, routeOpts.defaultH = defaultW, defaultH
-    routeOpts.viewportW = routeOptions.viewportW or defaultW
-    routeOpts.viewportH = routeOptions.viewportH or defaultH
-    routeOpts.scale = 1 / factor
-    stageStart = timer and timer()
-    local result = PromotionLayoutRoute(graph, buttons, routeOpts)
-    if timer then
-      stage.routing = stage.routing + timer() - stageStart
-    end
-    for i = 1, #warnings do
-      result.violations[#result.violations + 1] = warnings[i]
-    end
-    result.stats.orderCrossings = candidate.estimate
-    result.stats.orderSeed = candidate.seed
-    examined = examined + 1
-    -- Score the geometry that can actually be drawn. A centerline-only
-    -- success may still have colliding native elbows or crowded cards;
-    -- it must not hide a valid later placement from the presentation layer.
-    if type(PromotionCheckLayout) == "function" then
+    -- A free-entry twin is redundant once every side was already allowed,
+    -- once a left-entry plan has succeeded, or when it would repeat its twin.
+    local twin = plans[pi].twin and planResults[plans[pi].twin]
+    local skip = plans[pi].freeEntrySides
+      and (
+        routeOptions.freeEntrySides
+        or (best and best.valid)
+        or (twin and not twin.stats.entryPreferenceMatters)
+        or (twin and (twin.stats.routed or 0) < (twin.stats.edges or 0))
+      )
+    if not skip then
+      -- Exact proportional dimensions preserve both aspect and the area cap;
+      -- only the coordinates of individual controls are rounded to pixels.
+      local width, height = defaultW * factor, defaultH * factor
       stageStart = timer and timer()
-      PromotionCheckLayout(graph, result, routeOpts)
+      local buttons, warnings = placePromotionCards(
+        data,
+        candidate.order,
+        candidate.last,
+        width,
+        height,
+        routeOptions,
+        graph.chains
+      )
       if timer then
-        stage.audit = stage.audit + timer() - stageStart
+        stage.placement = stage.placement + timer() - stageStart
       end
-    end
-    local resultAccepted = result.valid == true
-    local bestAccepted = best and best.valid == true
-    if
-      not best
-      or (resultAccepted and not bestAccepted)
-      or (resultAccepted == bestAccepted and layoutScoreLessThan(result, best))
-    then
-      best = result
-    end
-    if best.valid ~= false and #best.violations == 0 and best.crossings == 0 and factor == 1 then
-      best.stats.candidates = examined
+      if plans[pi].compress then
+        local margin =
+          max(28, (routeOptions.cornerHalfH or 21) + (routeOptions.pipeHalfWidth or 8) + 5)
+        local left = margin + 52
+        local sx = (defaultW - left - margin - routeOptions.buttonW)
+          / (width - left - margin - routeOptions.buttonW)
+        local sy = (defaultH - 2 * margin - routeOptions.buttonH)
+          / (height - 2 * margin - routeOptions.buttonH)
+        for _, button in ipairs(buttons) do
+          button.x = round(left + (button.x - left) * sx)
+          button.y = round(margin + (button.y - margin) * sy)
+        end
+        width, height = defaultW, defaultH
+        factor = 1
+      end
+      local routeOpts = {}
+      for k, v in pairs(routeOptions) do
+        routeOpts[k] = v
+      end
+      routeOpts.width, routeOpts.height = width, height
+      routeOpts.defaultW, routeOpts.defaultH = defaultW, defaultH
+      routeOpts.viewportW = routeOptions.viewportW or defaultW
+      routeOpts.viewportH = routeOptions.viewportH or defaultH
+      routeOpts.scale = 1 / factor
+      routeOpts.freeEntrySides = routeOptions.freeEntrySides or plans[pi].freeEntrySides
+      stageStart = timer and timer()
+      local result = PromotionLayoutRoute(graph, buttons, routeOpts)
       if timer then
-        best.stats.stage = stage
+        stage.routing = stage.routing + timer() - stageStart
       end
-      return best
-    end
-    if pi == 1 and best.valid and (best.stats.routeStates or 0) >= 5000 then
-      -- A complete first candidate has already consumed substantial search
-      -- work. Keep that audited diagram instead of repeating a similarly
-      -- expensive order variant merely to chase a minor score difference.
-      best.stats.candidates = examined
-      if timer then
-        best.stats.stage = stage
+      for i = 1, #warnings do
+        result.violations[#result.violations + 1] = warnings[i]
       end
-      return best
-    end
-    if pi >= 2 and best.valid and best.scale == 1 then
-      -- Default-canvas orders have been considered. A larger logical canvas
-      -- is reserved for cases the normal viewport cannot validate.
-      best.stats.candidates = examined
-      if timer then
-        best.stats.stage = stage
+      result.stats.orderCrossings = candidate.estimate
+      result.stats.orderSeed = candidate.seed
+      examined = examined + 1
+      -- Score the geometry that can actually be drawn. A centerline-only
+      -- success may still have colliding native elbows or crowded cards;
+      -- it must not hide a valid later placement from the presentation layer.
+      if type(PromotionCheckLayout) == "function" then
+        stageStart = timer and timer()
+        PromotionCheckLayout(graph, result, routeOpts)
+        if timer then
+          stage.audit = stage.audit + timer() - stageStart
+        end
       end
-      return best
+      result.stats.freeEntrySides = routeOpts.freeEntrySides and true or false
+      planResults[pi] = result
+      local resultAccepted = result.valid == true
+      local bestAccepted = best and best.valid == true
+      if result.stats.freeEntrySides and not resultAccepted then
+        if not alternate or layoutScoreLessThan(result, alternate) then
+          alternate = result
+        end
+      end
+      -- The presentation layer may still repair a rejected candidate. Offer it
+      -- left entries first whenever they route as many prerequisites.
+      local preferLeft = best
+        and not resultAccepted
+        and not bestAccepted
+        and result.stats.freeEntrySides ~= best.stats.freeEntrySides
+        and result.stats.edges - result.stats.routed == best.stats.edges - best.stats.routed
+      if
+        not best
+        or (resultAccepted and not bestAccepted)
+        or (
+          resultAccepted == bestAccepted
+          and (
+            (preferLeft and not result.stats.freeEntrySides)
+            or (not preferLeft and layoutScoreLessThan(result, best))
+          )
+        )
+      then
+        best = result
+      end
+      if best.valid ~= false and #best.violations == 0 and best.crossings == 0 and factor == 1 then
+        best.stats.candidates = examined
+        if timer then
+          best.stats.stage = stage
+        end
+        return best
+      end
+      if pi == 1 and best.valid and (best.stats.routeStates or 0) >= 5000 then
+        -- A complete first candidate has already consumed substantial search
+        -- work. Keep that audited diagram instead of repeating a similarly
+        -- expensive order variant merely to chase a minor score difference.
+        best.stats.candidates = examined
+        if timer then
+          best.stats.stage = stage
+        end
+        return best
+      end
+      if pi >= 2 and best.valid and best.scale == 1 then
+        -- Default-canvas orders have been considered. A larger logical canvas
+        -- is reserved for cases the normal viewport cannot validate.
+        best.stats.candidates = examined
+        if timer then
+          best.stats.stage = stage
+        end
+        return best
+      end
     end
   end
   best.stats.candidates = examined
   if timer then
     best.stats.stage = stage
+  end
+  if not best.valid and alternate and alternate ~= best then
+    -- A crowded tree may only be repairable with top/bottom entries.
+    best.alternate = alternate
   end
   return best
 end
